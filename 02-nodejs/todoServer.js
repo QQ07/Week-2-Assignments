@@ -39,11 +39,82 @@
 
   Testing the server - run `npm run test-todoServer` command in terminal
  */
-const express = require('express');
-const bodyParser = require('body-parser');
+const express = require("express");
+const bodyParser = require("body-parser");
 
 const app = express();
+const port = 3000;
+var ToDosList = [
 
+];
+// console.log(ToDos[1])
 app.use(bodyParser.json());
 
+function todos(req, res) {
+  res.send(ToDosList);
+}
+app.get("/todos", todos); //returns all todos
+
+function TrueID(ToDosList, id) {
+  for (let i = 0; i < ToDosList.length; i++) {
+    if (ToDosList[i]["id"] == id) return i;
+  }
+  return -1;
+}
+
+function todosID(req, res) {
+  // console.log(req.params)
+  let id = req.params[0];
+  tid = TrueID(ToDosList, id);
+  if (tid == -1) res.status(404).send("ToDo with given ID does not exist");
+  res.send(ToDosList[tid]);
+}
+app.get("/todos/*", todosID); //returns a todo with specified ID
+
+function Add(req, res) {
+  // console.log(Object.keys(req.body));
+  let userKeys = Object.keys(req.body); //to check if frontend has sent the appropriate object in the body
+  if (!userKeys.includes("title", "description")) {
+    res.send("invalid ToDo format");
+  }
+  let nid = ToDosList.length + 1;
+  let newToDo = {
+    id: nid,
+    title: req.body["title"],
+    // completed: req.body["completed"],
+    description: req.body["description"],
+  };
+  ToDosList.push(newToDo);
+  res.status(201).send({ id: nid });
+}
+app.post("/todos", Add); //adds the todo and returns it's ID
+
+function ModifyID(req, res) {
+  let id = req.params[0];
+  tid = TrueID(ToDosList, id); //Position of todo in list
+  if (tid == -1) {
+    res.status(404).send("ToDo not found");
+  }
+  ToDosList[tid]["title"] = req.body["title"];
+  // ToDosList[tid]["completed"] = req.body["completed"];
+  ToDosList[tid]["description"] = req.body["description"];
+
+  res.send("ToDo found and updated");
+}
+app.put("/todos/*", ModifyID);
+
+function DeleteID(req, res) {
+  let id = req.params[0];
+  tid = TrueID(ToDosList, id); //Position of todo in list
+  if (tid == -1) {
+    res.status(404).send("ToDo not found");
+  }
+  ToDosList.splice(tid, 1);
+  res.send("ToDo found and deleted");
+}
+app.delete("/todos/*", DeleteID);
+
 module.exports = app;
+
+// app.listen(port);
+// console.log(`Server started on http://localhost:${port}/todos/1`);
